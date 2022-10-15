@@ -25,6 +25,21 @@ class UsersController < ApplicationController
 
     respond_to do |format|
       if @user.save
+        # client = Slack::Web::Client.new
+        # client.auth_test
+        # client.chat_postMessage(channel: '#general', text: "#{@user.email} created", as_user: true)
+        # client.chat_postMessage(channel: '#general', text: markdown_text(@user))
+
+        filename = 'sample-image.png'
+        file_path = Rails.root.join('app', 'assets', 'images', filename).to_s
+        SlackClient.client.files_upload(
+          channels: '#general',
+          as_user: true,
+          file: Faraday::UploadIO.new(file_path, 'image/png'),
+          title: 'My Avatar',
+          filename: filename,
+          initial_comment: 'Attached a selfie.'
+        )
         format.html { redirect_to user_url(@user), notice: "User was successfully created." }
         format.json { render :show, status: :created, location: @user }
       else
@@ -58,6 +73,20 @@ class UsersController < ApplicationController
   end
 
   private
+
+    def markdown_text(user)
+      <<~TEXT
+      :white_check_mark: User created
+      *email*: #{user.email}
+      *name*: #{user.name}
+      *phone*: #{user.phone}
+      inline `code`
+      ```
+      code block
+      ```
+      https://app.slack.com/client/TBVTPMD0E/CBVKBBYNT
+      TEXT
+    end
     # Use callbacks to share common setup or constraints between actions.
     def set_user
       @user = User.find(params[:id])
